@@ -1,7 +1,7 @@
 import random
 
 class Character():
-    def __init__(self, name: str, hp: int, damage: int, defence: int, equipment: dict[str, ], level: int = None,):
+    def __init__(self, name: str, hp: int, damage: int, defence: int, equipment: dict[str, any], level: int | None = None):
         self.name = name
         self.hp = hp
         self.damage = damage
