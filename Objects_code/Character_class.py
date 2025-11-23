@@ -67,7 +67,10 @@ class Character():
     def level_up(self) -> None:
         pass
 
-    def render_attack_text(outcome: dict) -> str:
+    def __str__(self):
+        return f"name:{self.name}, hp:{self.hp}, damage:{self.damage}, level:{self.level}, defence: {self.defence}, equipment: {self.equipment}"
+
+def render_attack_text(outcome: dict) -> str:
 
         text_block = ""
 
@@ -80,7 +83,7 @@ class Character():
         if outcome["blocked"] is True:
             text_block += "The attack was blocked.\n"
         else:
-            text_block += "Damage dealt: " + outcome["damage"] + "\n"
+            text_block += f"Damage dealt: {outcome["damage"]}\n"
 
         if outcome["warrior_rage"] == True:
             text_block += "Warrior enters RAGE and deals extra damage!\n"
@@ -90,10 +93,7 @@ class Character():
 
         return text_block
 
-    
-    def __str__(self):
-        return f"name:{self.name}, hp:{self.hp}, damage:{self.damage}, level:{self.level}, defence: {self.defence}, equipment: {self.equipment}"
-    
+
 
 class Warrior(Character):
     def __init__(self, name: str, hp: int, damage: int, defence: int, equipment: dict[str, any], level: int | None = None):
@@ -164,51 +164,134 @@ class Enemy_Rarity(Enum):
     MINI_BOSS = "mini_boss"
     BOSS = "boss"
 
-class Enemy_type(Enum): #only 1 for don't know how many I'll add
+class Enemy_sub_type(Enum): #only 1 for don't know how many I'll add
     UNDEAD = "undead"
+    HUMANOID = "humanoid"
+    OOZE = "ooze"
+    BEAST = "beast"
+    DRAGON = "dragon"
 
-class Behavior_Tag(Enum):
+class Enemy_type(Enum):
+    ENEMY_GOBLIN = "goblin"
+    ENEMY_SLIME = "slime"
+    ENEMY_WOLF = "wolf"
+    ENEMY_ORC = "orc"
+    ENEMY_BOSS_DRAGON = "dragon boss"
+
+
+class Enemy_behavior_tag(Enum):
     NORMAL = "normal" # default state
     AGGRESSIVE = "aggressive"
     COWARDLY = "cowardly"
     RANGED = "ranged"
     SLOW = "slow"
+    HULKING = "hulking"
 
 class Enemy(Character):
     def __init__(self, name: str, hp: int, damage: int, 
                  defence: int, rarity: Enemy_Rarity, 
-                 type: Enemy_type, loot_table: list[dict[str, any]],
-                 behavior_tag: Behavior_Tag | None = None):
+                 type: Enemy_type, sub_type: Enemy_sub_type, xp_reward: int, gold_reward: int, loot_table: list[dict[str, any]],
+                 behavior_tag: Enemy_behavior_tag | None = None):
         super().__init__(name, hp, damage, defence)
         
         self.type = type
+        self.sub_type = sub_type
         self.rarity = rarity
+        self.xp_reward = xp_reward
+        self.gold_reward = gold_reward
 
         self.level_scaling_factor = None # TBA
 
         self.loot_table = loot_table
 
-        self.behavior_tag = behavior_tag if behavior_tag else self.behavior_tag = Behavior_Tag.NORMAL
+        self.behavior_tag = behavior_tag if behavior_tag else Enemy_behavior_tag.NORMAL
+
+        self.is_scaled = False
     
-    def attack(self, other: 'Character') -> dict: # Will be modified later on but for now will act as normal
-        return super().attack(other)
-    
-    def take_damage(self, damage: int) -> None: # Will be modified later on but for now will act as normal
-        return super().take_damage(damage)
     
     def scale_stats(self, day_counter: int, depth) -> None:
+        if self.is_scaled == True:
+            return
         day_counter_scaling = 1 + (day_counter / 100)
         depth_scaling = 1 + (depth / 50)
 
-        self.hp = self.hp * day_counter_scaling
-        self.defence = self.defence * day_counter_scaling
+        self.hp = int(self.hp * day_counter_scaling)
+        self.defence = int(self.defence * day_counter_scaling)
 
-        self.damage = self.damage * depth_scaling
+        self.damage = int(self.damage * depth_scaling)
+        self.is_scaled = True
         
 
 
+ENEMY_DEFINITIONS = {
+    Enemy_type.ENEMY_GOBLIN: {
+        "name": "Goblin",
+        "hp": 20,
+        "damage": 4,
+        "defence": 1,
+        "rarity": Enemy_Rarity.COMMON,
+        "sub_type": Enemy_sub_type.HUMANOID,
+        "xp_reward": 50,
+        "gold_reward": 3,
+        "loot_table": [],
+        "behavior_tag": Enemy_behavior_tag.NORMAL
+    },
+    Enemy_type.ENEMY_SLIME: {
+        "name": "Slime",
+        "hp": 14,
+        "damage": 2,
+        "defence": 5,
+        "rarity": Enemy_Rarity.COMMON,
+        "sub_type": Enemy_sub_type.OOZE,
+        "xp_reward": 40,
+        "gold_reward": 2,
+        "loot_table": [],
+        "behavior_tag": Enemy_behavior_tag.COWARDLY
+    },
+    Enemy_type.ENEMY_WOLF:  {
+        "name": "Wolf",
+        "hp": 23,
+        "damage": 5,
+        "defence": 3,
+        "rarity": Enemy_Rarity.UNCOMMON,
+        "sub_type": Enemy_sub_type.BEAST,
+        "xp_reward": 60,
+        "gold_reward": 3,
+        "loot_table": [],
+        "behavior_tag": Enemy_behavior_tag.AGGRESSIVE
+    },
+    Enemy_type.ENEMY_ORC: {
+        "name": "Orc",
+        "hp": 50,
+        "damage": 7,
+        "defence": 5,
+        "rarity": Enemy_Rarity.RARE,
+        "sub_type": Enemy_sub_type.HUMANOID,
+        "xp_reward": 100,
+        "gold_reward": 20,
+        "loot_table": [],
+        "behavior_tag": Enemy_behavior_tag.SLOW
+    },
+    Enemy_type.ENEMY_BOSS_DRAGON : {
+        "name": "Dragon",
+        "hp": 150,
+        "damage": 40,
+        "defence": 28,
+        "rarity": Enemy_Rarity.BOSS,
+        "sub_type": Enemy_sub_type.DRAGON,
+        "xp_reward": 1800,
+        "gold_reward": 450,
+        "loot_table": [],
+        "behavior_tag": Enemy_behavior_tag.HULKING
+    }
+}
 
+def spawn_enemy(enemy_type):
+    data = ENEMY_DEFINITIONS[enemy_type].copy()
     
+    #adds the missing constructor to the enemy class since we use it as a dict key 
+    # without having it in the enemy definition part of the code
+    data["type"] = enemy_type 
 
-    
 
+    return Enemy(**data)
