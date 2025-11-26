@@ -5,13 +5,13 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import random
 from enum import Enum
-from Game_systems.Item_class import Items
-from Game_systems.Enemy_class import Enemy
+from Game_systems.Item_class import Items, spawn_item
+from Game_systems.Enemy_class import Enemy, Enemy_type, spawn_enemy
 
 class Room_Types(Enum):
     EMPTY = "empty"
     ENEMY_ROOM = "enemy room"
-    TREASURE_ROOM  = "treassure room"
+    TREASURE_ROOM  = "treasure room"
     TAVERN = "tavern"
     SHOP = "shop"
     INN = "inn"
@@ -19,60 +19,34 @@ class Room_Types(Enum):
 
 
 class Room(): 
-    def __init__(self, room_type, pos_x=0, pos_y=0, day_counter=1):
+    def __init__(self, room_type: Room_Types, pos_x: int =0, pos_y: int =0, day_counter: int =1):
         self.room_type = room_type
         self.pos_x = pos_x
         self.pos_y = pos_y
-        self.connections = {}
         self.contents = {
             "enemies": [], 
             "items": []
         }
         self.day_counter = day_counter
-        self.enemy_template = None
 
         match room_type:
             case Room_Types.TREASURE_ROOM:
-                for _ in range(random.randint(0, 2)):
-                    self.contents["items"].append(random.choice(Items.list()))
-                
-            case Room_Types.ENEMY_ROOM:
-                for _ in range(random.randint(1, 4)):
-                    base_enemy = random.choice(Enemy.list())
-        
-                    # Calculate modifier (e.g., 10% increase per day after day 1)
-                    modifier = 1 + (self.day_counter - 1) * 0.1
-                    
-                    modified_hp = int(base_enemy.hp * modifier)
-                    modified_damage = int(base_enemy.damage * modifier)
-                    new_enemy = Enemy(base_enemy.name, modified_hp, modified_damage)
-
-                    self.contents["enemies"].append(new_enemy)
-
-                    if len(self.contents["enemies"]) >= 2:
-                        break
-
-                    has_ogre = False
-                    for enemy in self.contents["enemies"]:
-                        if enemy.name == "ogre":
-                            has_ogre = True
-                            break
-                    if has_ogre:
-                        break
+                item_list = treasure_room_spawner()
+                for item in item_list:
+                    if item is None:
+                        continue
+                    self.contents["items"].append(item)
                 
                 self.contents["items"].append(random.choice(Items.list()))
             
             case Room_Types.BOSS_ROOM:
-                self.contents["enemies"].append(Enemy("Dragon", 50, 20))
-                self.contents["items"].append(Items("Magic Potion", "potion", None, 30))
+                for enemy in boss_room_spawner(self.day_counter):
+                    self.contents["enemies"].append(enemy)
             
             case _: #Types.EMPTY
                 pass
         
-    def visualize_encounter(self):
-        if self.room_type not in Room_Types:
-            return
-        
+    def visualize_encounter(self):        
         text_block = ""
         text_block += "===== ENCOUNTER DEBUG VIEW =====\n"
         text_block += f"Room Type: {self.room_type} \n"
@@ -81,7 +55,7 @@ class Room():
         text_block += "Enemies\n"
         if self.contents["enemies"]:
             for enemy in self.contents["enemies"]:
-                text_block += f"{enemy.name} (hp: {enemy.hp}, damage: {enemy.damage})\n"
+                text_block += f"{enemy.name} (hp: {enemy.hp}, damage: {enemy.damage}, rarity: {enemy.rarity}, type: {enemy.type}, subtype: {enemy.sub_type})\n"
         else:
             text_block += "No enemies present.\n"
         
@@ -89,17 +63,43 @@ class Room():
         text_block += "Items\n"
         if self.contents["items"]:
             for item in self.contents["items"]:
-                text_block += item.name + "\n"
+                text_block += f"{item.name}\n"
             
         else:
             text_block += "No items present.\n"
 
         return text_block
-    
-    def set_enemy_template(self, enemy_type):
-        self.enemy_template = enemy_type
 
     def __str__(self):
-        enemy_list = ", ".join([f"{enemy.name} ({enemy.hp} HP)" for enemy in self.contents["enemies"]]) or "None"
+        enemy_list = ", ".join([f"{enemy.name}, ({enemy.hp} HP), {enemy.type}" for enemy in self.contents["enemies"]]) or "None"
         item_list = ", ".join([f"{item.name}" for item in self.contents["items"]]) or "None"
         return f"{self.room_type.value}: Enemies - {enemy_list}, Items - {item_list}"
+
+
+def treasure_room_spawner() -> list['Items']:
+    item_list = []
+    item_list_type = ["small_healing_potion", "medium_healing_potion", "grand_healing_potion", "explosive_potion", None]
+    amount = random.randint(1, 4)
+    for _ in range(amount):
+        rnd = random.choice(item_list_type)
+        if rnd is None:
+            continue
+
+        item_obj = spawn_item(rnd)
+        item_list.append(item_obj)
+    return item_list
+
+def boss_room_spawner(day_counter:int = 1) -> list['Enemy']:
+    enemy_list = []
+    enemy_type = [Enemy_type.ENEMY_WOLF, Enemy_type.ENEMY_GOBLIN]
+
+    if day_counter > 20:
+        choice = random.choice(enemy_type)
+        enemy = spawn_enemy(choice)
+        enemy_list.append(enemy)
+
+    boss = spawn_enemy(Enemy_type.ENEMY_BOSS_DRAGON)
+    enemy_list.append(boss)
+
+    return enemy_list
+
