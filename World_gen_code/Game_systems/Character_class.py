@@ -20,7 +20,7 @@ class Character():
             "gold": 0
         }
     
-    def add_item(self, item: 'Items', amount:int = 1):
+    def add_item(self, item: Items, amount:int = 1):
         if item.name not in self.inventory["items"]:
             self.inventory["items"][item.name] = {
                 "item": item, 
@@ -36,7 +36,8 @@ class Character():
         
         return
     
-    def remove_item(self, item: 'Items', amount: int = 1):
+
+    def remove_item(self, item: Items, amount: int = 1):
         entry = self.inventory["items"][item.name]
 
         if item.stackable:
@@ -48,7 +49,7 @@ class Character():
         else:
             del self.inventory["items"][item.name]
 
-    def use_item(self, item: 'Items', target: 'Character'):
+    def use_item(self, item: Items, target: 'Character'):
         if item.category != Item_Type.CONSUMABLE:
             return "cannot use"
         
@@ -56,7 +57,8 @@ class Character():
 
         self.remove_item(item, 1)
         
-    def equip_item(self, item: 'Items'):
+
+    def equip_item(self, item: Items):
         if item.category not in (Item_Type.WEAPON, Item_Type.ARMOR):
             return f"Cannot equip {item.category}"
 
@@ -80,7 +82,7 @@ class Character():
         self.remove_item(item, 1)
         
 
-    def unequip_item(self, item: 'Items'):
+    def unequip_item(self, item: Items):
         slot = item.category
 
         for stat, value in item.stats.items():
@@ -97,18 +99,22 @@ class Character():
 
         self.equipment[slot] = None
 
-    def sell_item(self, item: 'Items'):
+
+    def sell_item(self, item: Items):
         if item.value == 0:
             return "Failed to sell"
         self.inventory["gold"] += item.value
         self.remove_item(item, 1)
 
+
     def take_damage(self, damage: int) -> None:
         self.hp -= damage
-    
+
+
     def is_alive(self) -> bool:
         return True if self.hp > 0 else False
-    
+
+
     def debug_attack(self, other: 'Character') -> None:
         text_block = ""
 
@@ -128,6 +134,7 @@ class Character():
 
         return text_block
     
+
     def attack(self, other: 'Character') -> None:
         outcome_table = {
             "attacker": self.name,
@@ -157,6 +164,7 @@ class Character():
         
         return outcome_table
     
+
     def level_up(self) -> None:
         pass
 
