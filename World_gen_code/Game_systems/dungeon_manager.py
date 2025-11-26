@@ -99,26 +99,9 @@ class Dungeon_Manager():
             "depth": self.compute_depth(pos)
         }
 
-    def process_room_on_enter(self, room):
-        encounter = {
-            "spawned_enemies": [],
-            "special_events": []
-        }
-
-        if room.room_type == Room_Types.ENEMY_ROOM:
-            if len(room.contents["enemies"]) == 0:
-                enemy = self.spawn_enemy_for_room(room)
-                encounter["spawned_enemies"].append(enemy)
-
-        if room.room_type == Room_Types.BOSS_ROOM:
-            if len(room.contents["enemies"]) == 0:
-                boss = self.spawn_boss_for_room(room)
-                encounter["spawned_enemies"].append(boss)
-
-
 
     def spawn_enemy_for_room(self, room: Room):
-        if room.room_type not in (Room_Types.ENEMY_ROOM, Room_Types.BOSS_ROOM):
+        if room.room_type != Room_Types.ENEMY_ROOM:
             return
         
         if len(room.contents["enemies"]) > 0:
@@ -135,17 +118,6 @@ class Dungeon_Manager():
         room.contents["enemies"].append(enemy_obj)
 
         return enemy_obj
-
-    def spawn_boss_for_room(self, room):
-        from Game_systems.Enemy_class import Enemy_type
-
-        depth = self.compute_depth((room.pos_x, room.pos_y))
-
-        boss = spawn_enemy(Enemy_type.ENEMY_BOSS_DRAGON)
-        boss.scale_stats(self.day_counter, depth)
-
-        room.contents["enemies"].append(boss)
-        return boss
 
 
     def room_exists(self, x: int, y: int) -> dict[str, any]:
