@@ -41,7 +41,7 @@ class Enemy(Character):
                  type: Enemy_type, sub_type: Enemy_sub_type, xp_reward: int, gold_reward: int, loot_table: list[dict[str, any]],
                  behavior_tag: Enemy_behavior_tag | None = None):
         super().__init__(name, hp, damage, defence)
-        
+        self.base_hp = hp
         self.type = type
         self.sub_type = sub_type
         self.rarity = rarity
